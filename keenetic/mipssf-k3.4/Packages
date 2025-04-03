@@ -1,0 +1,21 @@
+Package: hrneo
+Version: 0.0.0-2
+Architecture: mips-3.4
+Maintainer: Ground_Zerro
+Depends: ipset, iptables, tcpdump
+Section: net
+Priority: optional
+Filename: hrneo_0.0.0-2_mips-3.4.ipk
+Size: 2479789
+Description: HydraRoute Neo - tool for flexible traffic and VPN tunnel management.
+
+Package: hydraroute
+Version: 0.0.2-1
+Architecture: mips-3.4
+Maintainer: Ground_Zerro
+Depends: adguardhome-go, ipset, iptables, curl, jq
+Section: net
+Priority: optional
+Filename: hydraroute_0.0.2-1_mips-3.4.ipk
+Size: 2801396
+Description: HydraRoute Classic - domain routing for Keenetic based on ipset and AGH integration + WebUI control panel
