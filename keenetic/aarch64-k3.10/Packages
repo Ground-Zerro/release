@@ -1,0 +1,32 @@
+Package: hrneo
+Version: 0.0.0-4
+Architecture: aarch64-3.10
+Maintainer: Ground_Zerro
+Depends: ipset, iptables, tcpdump
+Section: net
+Priority: optional
+Filename: hrneo_0.0.0-4_aarch64-3.10.ipk
+Size: 2427517
+Description: HydraRoute Neo - tool for flexible traffic and VPN tunnel management.
+
+Package: hydraroute
+Version: 0.0.2-1
+Architecture: aarch64-3.10
+Maintainer: Ground_Zerro
+Depends: adguardhome-go, ipset, iptables, curl, jq
+Section: net
+Priority: optional
+Filename: hydraroute_0.0.2-1_aarch64-3.10.ipk
+Size: 2749751
+Description: HydraRoute Classic - domain routing for Keenetic based on ipset and AGH integration + WebUI control panel
+
+Package: sing-box-go
+Version: 1.12.0‑beta.14
+Architecture: aarch64-3.10
+Maintainer: Entware team, https://entware.net
+Depends: libc, libssp, librt, libpthread
+Section: net
+Priority: optional
+Filename: sing-box-go_1.12.0-beta.14_aarch64-3.10.ipk
+Size: 12773286
+Description: Sing-box is a fast, customizable and univsersal proxy platform that
