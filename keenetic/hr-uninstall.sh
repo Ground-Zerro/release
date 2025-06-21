@@ -44,6 +44,7 @@ files_uninstall() {
 	/opt/etc/init.d/S99hpanel
 	/opt/etc/init.d/S99hrpanel
 	/opt/etc/init.d/S99hrneo
+	/opt/etc/init.d/S98hr
 	/opt/var/log/AdGuardHome.log
 	/opt/bin/agh
 	/opt/bin/hr
