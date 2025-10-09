@@ -1,0 +1,54 @@
+Package: hrneo
+Version: 0.0.0-4
+Architecture: mipsel-3.4
+Maintainer: Ground_Zerro
+Depends: ipset, iptables, tcpdump
+Section: net
+Priority: optional
+Filename: hrneo_0.0.0-4_mipsel-3.4.ipk
+Size: 2444717
+Description: HydraRoute Neo - tool for flexible traffic and VPN tunnel management.
+
+Package: hydraroute
+Version: 0.0.3-1
+Architecture: mipsel-3.4
+Maintainer: Ground_Zerro
+Depends: adguardhome-go, ipset, iptables, curl, jq
+Section: net
+Priority: optional
+Filename: hydraroute_0.0.3-1_mipsel-3.4.ipk
+Size: 2760913
+Description: HydraRoute Classic - domain routing for Keenetic based on ipset and AGH integration + WebUI control panel
+
+Package: neofitsb
+Version: 1.1.1-2
+Architecture: mipsel-3.4
+Maintainer: pegakmop
+Depends: sing-box-go
+Section: net
+Priority: optional
+Filename: neofitsb_1.1.1-2_mipsel-3.4.ipk
+Size: 2027023
+Description: Automates configuration of sing-box-go: importing profiles via a link, compiling JSON configuration, creating system interfaces.
+
+Package: neofitxray
+Version: 1.1.1-2
+Architecture: mipsel-3.4
+Maintainer: pegakmop
+Depends: xray
+Section: net
+Priority: optional
+Filename: neofitxray_1.1.1-2_mipsel-3.4.ipk
+Size: 2030993
+Description: Automates configuration of xRay: importing profiles via a link, compiling JSON configuration, creating system interfaces.
+
+Package: sing-box-go
+Version: 1.12.0‑beta.14
+Architecture: mipsel-3.4
+Maintainer: Entware team, https://entware.net
+Depends: libc, libssp, librt, libpthread
+Section: net
+Priority: optional
+Filename: sing-box-go_1.12.0-beta.14_mipsel-3.4.ipk
+Size: 12355090
+Description: Sing-box is a fast, customizable and univsersal proxy platform that
