@@ -5,32 +5,60 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout source
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
 
     - name: Run generate-index.js
       run: node public/generate-index.js
+      env:
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_ACTIONS: 'true'
+
+    - name: Verify generated files
+      run: |
+        if [ ! -f keenetic/Packages ]; then
+          echo "❌ Error: Packages file not generated!"
+          exit 1
+        fi
+        echo "✅ Index files generated successfully"
 
     - name: Prepare build folder
       run: |
-        mkdir build
-        cp public/index.html build/
+        mkdir -p build
+        if [ -f public/index.html ]; then
+          cp public/index.html build/
+        fi
         cp -r keenetic build/
 
+    - name: Check build contents
+      run: |
+        echo "📦 Build folder contents:"
+        find build -type f | head -20
+
     - name: Deploy to GitHub Pages (pg_pages branch)
-      uses: peaceiris/actions-gh-pages@v3
+      uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_branch: pg_pages
         publish_dir: ./build
-        force_orphan: true
+        force_orphan: false
+        enable_jekyll: false
+
+    - name: Output deployment info
+      run: |
+        echo "::notice::✅ Deployed to https://ground-zerro.github.io/release/"
+        echo "::notice::📄 Packages at https://ground-zerro.github.io/release/keenetic/Packages"

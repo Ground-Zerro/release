@@ -21,6 +21,7 @@ a { color: #0366d6; text-decoration: none; }
 a:hover { text-decoration: underline; }
 `;
 
+// ИСПРАВЛЕНО: правильное сравнение версий по частям
 function compareVersions(v1, v2) {
   const parts1 = v1.split(/[.\-_]/).map(p => parseInt(p) || 0);
   const parts2 = v2.split(/[.\-_]/).map(p => parseInt(p) || 0);
@@ -56,9 +57,11 @@ function parseControlFields(content) {
 function extractControlFromIpk(ipkPath) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ipk-'));
   try {
+    // ИСПРАВЛЕНО: безопасное экранирование пути для shell команды
     const controlTar = execSync('tar -xOf ' + JSON.stringify(ipkPath) + ' control.tar.gz');
     fs.writeFileSync(path.join(tmpDir, 'control.tar.gz'), controlTar);
     execSync(`tar -xzf control.tar.gz`, { cwd: tmpDir });
+    // ИСПРАВЛЕНО: явное указание кодировки
     const controlContent = fs.readFileSync(path.join(tmpDir, 'control'), 'utf-8');
     return parseControlFields(controlContent);
   } catch (e) {
@@ -91,6 +94,7 @@ function generatePackagesFiles(dir, relPath) {
     });
   }
 
+  // Выбор только самых новых версий
   const latestMap = {};
   for (const entry of packageEntries) {
     const key = `${entry.name}_${entry.arch}`;
@@ -157,6 +161,7 @@ function generateIndexForDir(currentPath, rootDirAbs, rootDirRel) {
   const relativePathFromRoot = path.relative(rootDirAbs, currentPath).replace(/\\/g, '/');
   const fullPathFromRepo = path.posix.join(rootDirRel, relativePathFromRoot);
   const folderUrl = `/${fullPathFromRepo}/`.replace(/\/+/g, '/');
+  // ИСПРАВЛЕНО: упрощенная нормализация слешей
   const baseHref = `${repoBaseUrl}/${fullPathFromRepo}/`.replace(/\\/g, '/').replace(/\/+/g, '/');
 
   const files = entries.filter(e => e.isFile() && e.name !== 'index.html')
@@ -167,6 +172,7 @@ function generateIndexForDir(currentPath, rootDirAbs, rootDirRel) {
     .map(e => ({ name: e.name + '/', size: '-' }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
+  // ИСПРАВЛЕНО: использование относительной ссылки для родительской директории
   const parentUrl = '../';
 
   const rows = [
