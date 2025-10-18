@@ -21,7 +21,6 @@ a { color: #0366d6; text-decoration: none; }
 a:hover { text-decoration: underline; }
 `;
 
-// ИСПРАВЛЕНО: правильное сравнение версий по частям
 function compareVersions(v1, v2) {
   const parts1 = v1.split(/[.\-_]/).map(p => parseInt(p) || 0);
   const parts2 = v2.split(/[.\-_]/).map(p => parseInt(p) || 0);
@@ -57,15 +56,13 @@ function parseControlFields(content) {
 function extractControlFromIpk(ipkPath) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ipk-'));
   try {
-    // ИСПРАВЛЕНО: безопасное экранирование пути для shell команды
-    const controlTar = execSync('tar -xOf ' + JSON.stringify(ipkPath) + ' control.tar.gz');
+    const controlTar = execSync('tar -xOf ' + JSON.stringify(ipkPath) + ' control.tar.gz', { stdio: ['pipe', 'pipe', 'pipe'] });
     fs.writeFileSync(path.join(tmpDir, 'control.tar.gz'), controlTar);
-    execSync(`tar -xzf control.tar.gz`, { cwd: tmpDir });
-    // ИСПРАВЛЕНО: явное указание кодировки
+    execSync(`tar -xzf control.tar.gz`, { cwd: tmpDir, stdio: ['pipe', 'pipe', 'pipe'] });
     const controlContent = fs.readFileSync(path.join(tmpDir, 'control'), 'utf-8');
     return parseControlFields(controlContent);
   } catch (e) {
-    console.error(`⚠️ Failed to parse .ipk: ${ipkPath}`);
+    console.error(`⚠️ Failed to parse .ipk: ${ipkPath} - ${e.message}`);
     return null;
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -76,6 +73,8 @@ function generatePackagesFiles(dir, relPath) {
   const entries = fs.readdirSync(dir);
   const ipkFiles = entries.filter(f => f.endsWith('.ipk'));
   if (ipkFiles.length === 0) return;
+
+  console.log(`📦 Processing ${ipkFiles.length} .ipk files in ${relPath}`);
 
   const packageEntries = [];
 
@@ -94,7 +93,6 @@ function generatePackagesFiles(dir, relPath) {
     });
   }
 
-  // Выбор только самых новых версий
   const latestMap = {};
   for (const entry of packageEntries) {
     const key = `${entry.name}_${entry.arch}`;
@@ -126,6 +124,7 @@ function generatePackagesFiles(dir, relPath) {
   const allText = packages.join('\n');
   fs.writeFileSync(path.join(dir, 'Packages'), allText, 'utf-8');
   fs.writeFileSync(path.join(dir, 'Packages.gz'), zlib.gzipSync(allText));
+  console.log(`✅ Created Packages and Packages.gz in ${relPath}`);
 
   let html = `<!DOCTYPE html>
 <html>
@@ -161,7 +160,6 @@ function generateIndexForDir(currentPath, rootDirAbs, rootDirRel) {
   const relativePathFromRoot = path.relative(rootDirAbs, currentPath).replace(/\\/g, '/');
   const fullPathFromRepo = path.posix.join(rootDirRel, relativePathFromRoot);
   const folderUrl = `/${fullPathFromRepo}/`.replace(/\/+/g, '/');
-  // ИСПРАВЛЕНО: упрощенная нормализация слешей
   const baseHref = `${repoBaseUrl}/${fullPathFromRepo}/`.replace(/\\/g, '/').replace(/\/+/g, '/');
 
   const files = entries.filter(e => e.isFile() && e.name !== 'index.html')
@@ -172,7 +170,6 @@ function generateIndexForDir(currentPath, rootDirAbs, rootDirRel) {
     .map(e => ({ name: e.name + '/', size: '-' }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  // ИСПРАВЛЕНО: использование относительной ссылки для родительской директории
   const parentUrl = '../';
 
   const rows = [
@@ -212,11 +209,18 @@ function walkAndGenerate(currentDir, rootDirAbs, rootDirRel) {
   }
 }
 
+console.log('🚀 Starting index generation...');
+console.log(`Repository root: ${repoRoot}`);
+
 for (const rootDirRel of rootDirs) {
   const rootDirAbs = path.join(repoRoot, rootDirRel);
+  console.log(`\n📂 Processing directory: ${rootDirRel}`);
   if (fs.existsSync(rootDirAbs)) {
     walkAndGenerate(rootDirAbs, rootDirAbs, rootDirRel);
+    console.log(`✅ Completed processing ${rootDirRel}`);
   } else {
-    console.warn(`⚠ Directory not found: ${rootDirRel}`);
+    console.warn(`⚠️ Directory not found: ${rootDirRel}`);
   }
 }
+
+console.log('\n✨ Index generation completed!');

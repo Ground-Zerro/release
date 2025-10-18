@@ -30,11 +30,12 @@ jobs:
 
     - name: Verify generated files
       run: |
-        if [ ! -f keenetic/Packages ]; then
-          echo "❌ Error: Packages file not generated!"
+        if ! find keenetic -name "Packages" -type f | grep -q .; then
+          echo "❌ Error: No Packages files generated!"
           exit 1
         fi
         echo "✅ Index files generated successfully"
+        find keenetic -name "Packages" -type f
 
     - name: Prepare build folder
       run: |
@@ -49,7 +50,7 @@ jobs:
         echo "📦 Build folder contents:"
         find build -type f | head -20
 
-    - name: Deploy to GitHub Pages (pg_pages branch)
+    - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -61,4 +62,4 @@ jobs:
     - name: Output deployment info
       run: |
         echo "::notice::✅ Deployed to https://ground-zerro.github.io/release/"
-        echo "::notice::📄 Packages at https://ground-zerro.github.io/release/keenetic/Packages"
+        echo "::notice::📄 Packages at https://ground-zerro.github.io/release/keenetic/"
