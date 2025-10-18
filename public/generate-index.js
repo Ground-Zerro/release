@@ -22,14 +22,8 @@ a:hover { text-decoration: underline; }
 `;
 
 function compareVersions(v1, v2) {
-  const parts1 = v1.split(/[.\-_]/).map(p => parseInt(p) || 0);
-  const parts2 = v2.split(/[.\-_]/).map(p => parseInt(p) || 0);
-  
-  for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-    const diff = (parts1[i] || 0) - (parts2[i] || 0);
-    if (diff !== 0) return diff;
-  }
-  return 0;
+  const normalize = v => v.replace(/[^0-9]/g, '').padStart(8, '0');
+  return parseInt(normalize(v1)) - parseInt(normalize(v2));
 }
 
 function formatSize(bytes) {
@@ -56,13 +50,13 @@ function parseControlFields(content) {
 function extractControlFromIpk(ipkPath) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ipk-'));
   try {
-    const controlTar = execSync('tar -xOf ' + JSON.stringify(ipkPath) + ' control.tar.gz', { stdio: ['pipe', 'pipe', 'pipe'] });
+    const controlTar = execSync(`tar -xOf "${ipkPath}" control.tar.gz`);
     fs.writeFileSync(path.join(tmpDir, 'control.tar.gz'), controlTar);
-    execSync(`tar -xzf control.tar.gz`, { cwd: tmpDir, stdio: ['pipe', 'pipe', 'pipe'] });
-    const controlContent = fs.readFileSync(path.join(tmpDir, 'control'), 'utf-8');
+    execSync(`tar -xzf control.tar.gz`, { cwd: tmpDir });
+    const controlContent = fs.readFileSync(path.join(tmpDir, 'control')).toString();
     return parseControlFields(controlContent);
   } catch (e) {
-    console.error(`⚠️ Failed to parse .ipk: ${ipkPath} - ${e.message}`);
+    console.error(`⚠️ Failed to parse .ipk: ${ipkPath}`);
     return null;
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -73,8 +67,6 @@ function generatePackagesFiles(dir, relPath) {
   const entries = fs.readdirSync(dir);
   const ipkFiles = entries.filter(f => f.endsWith('.ipk'));
   if (ipkFiles.length === 0) return;
-
-  console.log(`📦 Processing ${ipkFiles.length} .ipk files in ${relPath}`);
 
   const packageEntries = [];
 
@@ -93,6 +85,7 @@ function generatePackagesFiles(dir, relPath) {
     });
   }
 
+  // Выбор только самых новых версий
   const latestMap = {};
   for (const entry of packageEntries) {
     const key = `${entry.name}_${entry.arch}`;
@@ -122,9 +115,8 @@ function generatePackagesFiles(dir, relPath) {
   }
 
   const allText = packages.join('\n');
-  fs.writeFileSync(path.join(dir, 'Packages'), allText, 'utf-8');
+  fs.writeFileSync(path.join(dir, 'Packages'), allText);
   fs.writeFileSync(path.join(dir, 'Packages.gz'), zlib.gzipSync(allText));
-  console.log(`✅ Created Packages and Packages.gz in ${relPath}`);
 
   let html = `<!DOCTYPE html>
 <html>
@@ -150,7 +142,7 @@ function generatePackagesFiles(dir, relPath) {
     html += `<tr><td><a href="${data.Filename}">${data.Package}</a></td><td>${data.Version}</td><td>${data.Section || ''}</td><td>${data.Description || ''}</td></tr>`;
   }
   html += '</tbody></table></body></html>';
-  fs.writeFileSync(path.join(dir, 'Packages.html'), html, 'utf-8');
+  fs.writeFileSync(path.join(dir, 'Packages.html'), html);
 }
 
 function generateIndexForDir(currentPath, rootDirAbs, rootDirRel) {
@@ -160,7 +152,7 @@ function generateIndexForDir(currentPath, rootDirAbs, rootDirRel) {
   const relativePathFromRoot = path.relative(rootDirAbs, currentPath).replace(/\\/g, '/');
   const fullPathFromRepo = path.posix.join(rootDirRel, relativePathFromRoot);
   const folderUrl = `/${fullPathFromRepo}/`.replace(/\/+/g, '/');
-  const baseHref = `${repoBaseUrl}/${fullPathFromRepo}/`.replace(/\\/g, '/').replace(/\/+/g, '/');
+  const baseHref = `${repoBaseUrl}/${fullPathFromRepo}/`.replace(/\\+/g, '/').replace(/([^:]\/)\/+/g, '$1');
 
   const files = entries.filter(e => e.isFile() && e.name !== 'index.html')
     .map(e => ({ name: e.name, size: formatSize(fs.statSync(path.join(currentPath, e.name)).size) }))
@@ -170,7 +162,8 @@ function generateIndexForDir(currentPath, rootDirAbs, rootDirRel) {
     .map(e => ({ name: e.name + '/', size: '-' }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const parentUrl = '../';
+  const parentPath = fullPathFromRepo.split('/').slice(0, -1).join('/');
+  const parentUrl = parentPath ? `${repoBaseUrl}/${parentPath}/` : `${repoBaseUrl}/`;
 
   const rows = [
     { name: '..', size: '', href: parentUrl },
@@ -209,18 +202,11 @@ function walkAndGenerate(currentDir, rootDirAbs, rootDirRel) {
   }
 }
 
-console.log('🚀 Starting index generation...');
-console.log(`Repository root: ${repoRoot}`);
-
 for (const rootDirRel of rootDirs) {
   const rootDirAbs = path.join(repoRoot, rootDirRel);
-  console.log(`\n📂 Processing directory: ${rootDirRel}`);
   if (fs.existsSync(rootDirAbs)) {
     walkAndGenerate(rootDirAbs, rootDirAbs, rootDirRel);
-    console.log(`✅ Completed processing ${rootDirRel}`);
   } else {
-    console.warn(`⚠️ Directory not found: ${rootDirRel}`);
+    console.warn(`⚠ Directory not found: ${rootDirRel}`);
   }
 }
-
-console.log('\n✨ Index generation completed!');
