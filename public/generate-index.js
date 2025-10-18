@@ -22,8 +22,14 @@ a:hover { text-decoration: underline; }
 `;
 
 function compareVersions(v1, v2) {
-  const normalize = v => v.replace(/[^0-9]/g, '').padStart(8, '0');
-  return parseInt(normalize(v1)) - parseInt(normalize(v2));
+  const parts1 = v1.split(/[.\-_]/).map(p => parseInt(p) || 0);
+  const parts2 = v2.split(/[.\-_]/).map(p => parseInt(p) || 0);
+  
+  for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+    const diff = (parts1[i] || 0) - (parts2[i] || 0);
+    if (diff !== 0) return diff;
+  }
+  return 0;
 }
 
 function formatSize(bytes) {
@@ -50,10 +56,10 @@ function parseControlFields(content) {
 function extractControlFromIpk(ipkPath) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ipk-'));
   try {
-    const controlTar = execSync(`tar -xOf "${ipkPath}" control.tar.gz`);
+    const controlTar = execSync('tar -xOf ' + JSON.stringify(ipkPath) + ' control.tar.gz');
     fs.writeFileSync(path.join(tmpDir, 'control.tar.gz'), controlTar);
     execSync(`tar -xzf control.tar.gz`, { cwd: tmpDir });
-    const controlContent = fs.readFileSync(path.join(tmpDir, 'control')).toString();
+    const controlContent = fs.readFileSync(path.join(tmpDir, 'control'), 'utf-8');
     return parseControlFields(controlContent);
   } catch (e) {
     console.error(`⚠️ Failed to parse .ipk: ${ipkPath}`);
@@ -85,7 +91,6 @@ function generatePackagesFiles(dir, relPath) {
     });
   }
 
-  // Выбор только самых новых версий
   const latestMap = {};
   for (const entry of packageEntries) {
     const key = `${entry.name}_${entry.arch}`;
@@ -115,7 +120,7 @@ function generatePackagesFiles(dir, relPath) {
   }
 
   const allText = packages.join('\n');
-  fs.writeFileSync(path.join(dir, 'Packages'), allText);
+  fs.writeFileSync(path.join(dir, 'Packages'), allText, 'utf-8');
   fs.writeFileSync(path.join(dir, 'Packages.gz'), zlib.gzipSync(allText));
 
   let html = `<!DOCTYPE html>
@@ -142,7 +147,7 @@ function generatePackagesFiles(dir, relPath) {
     html += `<tr><td><a href="${data.Filename}">${data.Package}</a></td><td>${data.Version}</td><td>${data.Section || ''}</td><td>${data.Description || ''}</td></tr>`;
   }
   html += '</tbody></table></body></html>';
-  fs.writeFileSync(path.join(dir, 'Packages.html'), html);
+  fs.writeFileSync(path.join(dir, 'Packages.html'), html, 'utf-8');
 }
 
 function generateIndexForDir(currentPath, rootDirAbs, rootDirRel) {
@@ -152,7 +157,7 @@ function generateIndexForDir(currentPath, rootDirAbs, rootDirRel) {
   const relativePathFromRoot = path.relative(rootDirAbs, currentPath).replace(/\\/g, '/');
   const fullPathFromRepo = path.posix.join(rootDirRel, relativePathFromRoot);
   const folderUrl = `/${fullPathFromRepo}/`.replace(/\/+/g, '/');
-  const baseHref = `${repoBaseUrl}/${fullPathFromRepo}/`.replace(/\\+/g, '/').replace(/([^:]\/)\/+/g, '$1');
+  const baseHref = `${repoBaseUrl}/${fullPathFromRepo}/`.replace(/\\/g, '/').replace(/\/+/g, '/');
 
   const files = entries.filter(e => e.isFile() && e.name !== 'index.html')
     .map(e => ({ name: e.name, size: formatSize(fs.statSync(path.join(currentPath, e.name)).size) }))
@@ -162,8 +167,7 @@ function generateIndexForDir(currentPath, rootDirAbs, rootDirRel) {
     .map(e => ({ name: e.name + '/', size: '-' }))
     .sort((a, b) => a.name.localeCompare(b.name));
 
-  const parentPath = fullPathFromRepo.split('/').slice(0, -1).join('/');
-  const parentUrl = parentPath ? `${repoBaseUrl}/${parentPath}/` : `${repoBaseUrl}/`;
+  const parentUrl = '../';
 
   const rows = [
     { name: '..', size: '', href: parentUrl },
