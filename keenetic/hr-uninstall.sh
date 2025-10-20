@@ -1,4 +1,7 @@
 #!/bin/sh
+
+cd /tmp
+
 LOG="/opt/var/log/HydraRoute.log"
 printf "\n%s Удаление\n" "$(date "+%Y-%m-%d %H:%M:%S")" > "$LOG" 2>&1
 
@@ -18,6 +21,7 @@ animation() {
 }
 
 opkg_uninstall() {
+	echo "Stop and delete opkg" >>"$LOG"
 	[ -f /opt/etc/init.d/S99adguardhome ] && /opt/etc/init.d/S99adguardhome stop
 	[ -f /opt/etc/init.d/S99hpanel ] && /opt/etc/init.d/S99hpanel stop
 	[ -f /opt/etc/init.d/S99hrpanel ] && /opt/etc/init.d/S99hrpanel stop
@@ -32,32 +36,31 @@ opkg_uninstall() {
 
 files_uninstall() {
 	echo "Delete files and path" >>"$LOG"
-	FILES="
-	/opt/etc/ndm/ifstatechanged.d/010-bypass-table.sh
-	/opt/etc/ndm/ifstatechanged.d/011-bypass6-table.sh
-	/opt/etc/ndm/netfilter.d/010-bypass.sh
-	/opt/etc/ndm/netfilter.d/011-bypass6.sh
-	/opt/etc/ndm/netfilter.d/010-hydra.sh
-	/opt/etc/ndm/netfilter.d/015-hrneo.sh
-	/opt/etc/init.d/S52ipset
-	/opt/etc/init.d/S52hydra
-	/opt/etc/init.d/S99hpanel
-	/opt/etc/init.d/S99hrpanel
-	/opt/etc/init.d/S99hrneo
-	/opt/etc/init.d/S98hr
-	/opt/var/log/AdGuardHome.log
-	/opt/bin/agh
-	/opt/bin/hr
-	/opt/bin/hrpanel
-	/opt/bin/neo
-	"
 	
-	for FILE in $FILES; do
-		[ -f "$FILE" ] && rm -f "$FILE"
-	done
+	rm -f /opt/etc/ndm/ifstatechanged.d/010-bypass-table.sh
+	rm -f /opt/etc/ndm/ifstatechanged.d/011-bypass6-table.sh
+	rm -f /opt/etc/ndm/netfilter.d/010-bypass.sh
+	rm -f /opt/etc/ndm/netfilter.d/011-bypass6.sh
+	rm -f /opt/etc/ndm/netfilter.d/010-hydra.sh
+	rm -f /opt/etc/ndm/netfilter.d/015-hrneo.sh
+	rm -f /opt/etc/init.d/S52ipset
+	rm -f /opt/etc/init.d/S52hydra
+	rm -f /opt/etc/init.d/S99hpanel
+	rm -f /opt/etc/init.d/S99hrpanel
+	rm -f /opt/etc/init.d/S99hrneo
+	rm -f /opt/etc/init.d/S98hr
+	rm -f /opt/var/log/AdGuardHome.log
+	rm -f /opt/bin/agh
+	rm -f /opt/bin/hr
+	rm -f /opt/bin/hrpanel
+	rm -f /opt/bin/neo
 	
-	[ -d /opt/etc/HydraRoute ] && rm -rf /opt/etc/HydraRoute
-	[ -d /opt/etc/AdGuardHome ] && rm -rf /opt/etc/AdGuardHome
+	if [ -d "/opt/etc/HydraRoute" ] && [ "/opt/etc/HydraRoute" != "/" ]; then
+		rm -rf /opt/etc/HydraRoute
+	fi
+	if [ -d "/opt/etc/AdGuardHome" ] && [ "/opt/etc/AdGuardHome" != "/" ]; then
+		rm -rf /opt/etc/AdGuardHome
+	fi
 }
 
 policy_uninstall() {
@@ -85,7 +88,6 @@ dns_on() {
 	sleep 2
 }
 
-# main
 opkg_uninstall >>"$LOG" 2>&1 &
 animation $! "Удаление opkg пакетов"
 
@@ -101,6 +103,11 @@ animation $! "Включение системного DNS сервера"
 echo "Удаление завершено (╥_╥)"
 echo "Перезагрузка через 5 секунд..."
 
-SCRIPT_PATH="$0"
-(sleep 3 && rm -f "$SCRIPT_PATH" && reboot) &
+SCRIPT_PATH="$(readlink -f "$0" 2>/dev/null)"
+if [ -n "$SCRIPT_PATH" ] && [ -f "$SCRIPT_PATH" ]; then
+	(sleep 3 && rm -f "$SCRIPT_PATH" && reboot) &
+else
+	(sleep 3 && reboot) &
+fi
+
 exit 0
