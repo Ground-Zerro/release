@@ -1,37 +1,37 @@
 #!/bin/sh
-
-# Служебные функции и переменные
 LOG="/opt/var/log/HydraRoute.log"
-printf "\n%s Удаление\n" "$(date "+%Y-%m-%d %H:%M:%S")" >>"$LOG" 2>&1
-## анимация
+printf "\n%s Удаление\n" "$(date "+%Y-%m-%d %H:%M:%S")" > "$LOG" 2>&1
+
 animation() {
-	local pid=$1
-	local message=$2
+	local pid="$1"
+	local message="$2"
 	local spin='-\|/'
-
-	echo -n "$message... "
-
-	while kill -0 $pid 2>/dev/null; do
-		for i in $(seq 0 3); do
-			echo -ne "\b${spin:$i:1}"
-			usleep 100000  # 0.1 сек
-		done
+	local i=0
+	printf "%s... " "$message"
+	while kill -0 "$pid" 2>/dev/null; do
+		i=$((i % 4))
+		printf "\b%s" "$(echo "$spin" | cut -c$((i + 1)))"
+		i=$((i + 1))
+		usleep 100000
 	done
-
-  echo -e "\b✔ Готово!"
+	printf "\b✔ Готово!\n"
 }
 
-# удаление пакетов
 opkg_uninstall() {
-	/opt/etc/init.d/S99adguardhome stop
-	/opt/etc/init.d/S99hpanel stop
-	/opt/etc/init.d/S99hrpanel stop
-	/opt/etc/init.d/S99hrneo stop
-	opkg remove hrneo hydraroute adguardhome-go ipset iptables jq node-npm node
+	[ -f /opt/etc/init.d/S99adguardhome ] && /opt/etc/init.d/S99adguardhome stop
+	[ -f /opt/etc/init.d/S99hpanel ] && /opt/etc/init.d/S99hpanel stop
+	[ -f /opt/etc/init.d/S99hrpanel ] && /opt/etc/init.d/S99hrpanel stop
+	[ -f /opt/etc/init.d/S99hrneo ] && /opt/etc/init.d/S99hrneo stop
+	
+	for pkg in hrneo hydraroute adguardhome-go ipset iptables jq node-npm node; do
+		if opkg list-installed | grep -q "^$pkg "; then
+			opkg remove "$pkg"
+		fi
+	done
 }
 
-# удаление файлов
 files_uninstall() {
+	echo "Delete files and path" >>"$LOG"
 	FILES="
 	/opt/etc/ndm/ifstatechanged.d/010-bypass-table.sh
 	/opt/etc/ndm/ifstatechanged.d/011-bypass6-table.sh
@@ -51,76 +51,56 @@ files_uninstall() {
 	/opt/bin/hrpanel
 	/opt/bin/neo
 	"
-
+	
 	for FILE in $FILES; do
-		[ -f "$FILE" ] && { chmod 777 "$FILE" || true; rm -f "$FILE"; }
+		[ -f "$FILE" ] && rm -f "$FILE"
 	done
-
-	[ -d /opt/etc/HydraRoute ] && { chmod -R 777 /opt/etc/HydraRoute || true; rm -rf /opt/etc/HydraRoute; }
-	[ -d /opt/etc/AdGuardHome ] && { chmod -R 777 /opt/etc/AdGuardHome || true; rm -rf /opt/etc/AdGuardHome; }
+	
+	[ -d /opt/etc/HydraRoute ] && rm -rf /opt/etc/HydraRoute
+	[ -d /opt/etc/AdGuardHome ] && rm -rf /opt/etc/AdGuardHome
 }
 
-# удаление политик
 policy_uninstall() {
+	echo "Policy uninstall" >>"$LOG"
 	for suffix in 1st 2nd 3rd; do
-		ndmc -c "no ip policy HydraRoute$suffix"
+		ndmc -c "no ip policy HydraRoute$suffix" || true
 	done
-	ndmc -c "no ip policy HydraRoute"
+	for suffix in 1 2 3; do
+		ndmc -c "no ip policy HR$suffix" || true
+	done
+	ndmc -c 'no ip policy HydraRoute' || true
 	ndmc -c 'system configuration save'
 	sleep 2
 }
 
-# включение IPv6 и DNS провайдера
-enable_ipv6_and_dns() {
-  interfaces=$(curl -kfsS "http://localhost:79/rci/show/interface/" | jq -r '
-    to_entries[] | 
-    select(.value.defaultgw == true or .value.via != null) | 
-    if .value.via then "\(.value.id) \(.value.via)" else "\(.value.id)" end
-  ')
-
-  for line in $interfaces; do
-    set -- $line
-    iface=$1
-    via=$2
-
-    ndmc -c "interface $iface ipv6 address auto"
-    ndmc -c "interface $iface ip name-servers"
-
-    if [ -n "$via" ]; then
-      ndmc -c "interface $via ipv6 address auto"
-      ndmc -c "interface $via ip name-servers"
-    fi
-  done
-
-  ndmc -c 'system configuration save'
-  sleep 2
-}
-
-# включение системного DNS сервера
 dns_on() {
+	echo "DoT add" >>"$LOG"
+	if ndmc -c show version | grep -oq 'dns-tls'; then
+		ndmc -c dns tls upstream 8.8.8.8 sni dns.google
+		ndmc -c dns tls upstream 9.9.9.9 sni dns.quad9.net
+	fi
+	echo "System DNS on" >>"$LOG"
 	ndmc -c 'opkg no dns-override'
 	ndmc -c 'system configuration save'
 	sleep 2
 }
 
-#main
-enable_ipv6_and_dns >>"$LOG" 2>&1 &
-animation $! "Включение IPv6 и DNS провайдера"
-
+# main
 opkg_uninstall >>"$LOG" 2>&1 &
 animation $! "Удаление opkg пакетов"
 
-( files_uninstall >>"$LOG" 2>&1; exit 0 ) &
-animation $! "Удаление файлов, созданных HydraRoute"
-
 policy_uninstall >>"$LOG" 2>&1 &
 animation $! "Удаление политик HydraRoute"
+
+files_uninstall >>"$LOG" 2>&1 &
+animation $! "Удаление файлов, созданных HydraRoute"
 
 dns_on >>"$LOG" 2>&1 &
 animation $! "Включение системного DNS сервера"
 
 echo "Удаление завершено (╥_╥)"
-echo "Перезагрузка..."
-[ -f "$0" ] && rm "$0"
-reboot
+echo "Перезагрузка через 5 секунд..."
 
+SCRIPT_PATH="$0"
+(sleep 3 && rm -f "$SCRIPT_PATH" && reboot) &
+exit 0
