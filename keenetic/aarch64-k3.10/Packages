@@ -1,0 +1,65 @@
+Package: hrneo
+Version: 0.2.0-1
+Architecture: aarch64-3.10
+Maintainer: Ground_Zerro
+Depends: ipset, iptables, tcpdump
+Section: net
+Priority: optional
+Filename: hrneo_0.2.0-1_aarch64-3.10.ipk
+Size: 2516858
+Description: HydraRoute Neo is a tool for managing traffic through VPN tunnels.
+
+Package: hrweb
+Version: 1.0.0-1-alpha
+Architecture: aarch64-3.10
+Maintainer: Ground_Zerro
+Depends: hrneo
+Section: net
+Priority: optional
+Filename: hrweb_1.0.0-1-alpha_aarch64-3.10.ipk
+Size: 2997489
+Description: WebUI for HydraRoute Neo
+
+Package: hydraroute
+Version: 1.1.0-final
+Architecture: aarch64-3.10
+Maintainer: Ground_Zerro
+Depends: ipset, iptables, adguardhome-go
+Section: net
+Priority: optional
+Filename: hydraroute_1.1.0-final_aarch64-3.10.ipk
+Size: 2894847
+Description: HydraRoute Classic - domain routing for Keenetic based on ipset and AGH integration + WebUI control panel
+
+Package: sing-box-go
+Version: 1.12.0‑beta.14
+Architecture: aarch64-3.10
+Maintainer: Entware team, https://entware.net
+Depends: libc, libssp, librt, libpthread
+Section: net
+Priority: optional
+Filename: sing-box-go_1.12.0-beta.14_aarch64-3.10.ipk
+Size: 12773286
+Description: Sing-box is a fast, customizable and univsersal proxy platform that
+
+Package: xray-core
+Version: 25.10.15
+Architecture: aarch64-3.10
+Maintainer: Entware team, https://entware.net
+Depends: libc, libssp, librt, libpthread, ca-bundle
+Section: net
+Priority: optional
+Filename: xray-core_25.10.15_aarch64-3.10.ipk
+Size: 10172332
+Description: Project X originates from XTLS protocol, providing a set of network tools.
+
+Package: xray
+Version: 25.10.15
+Architecture: aarch64-3.10
+Maintainer: Entware team, https://entware.net
+Depends: libc, libssp, librt, libpthread, xray-core
+Section: net
+Priority: optional
+Filename: xray_25.10.15_aarch64-3.10.ipk
+Size: 2900
+Description: scripts & configs.
