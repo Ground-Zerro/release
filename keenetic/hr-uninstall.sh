@@ -28,11 +28,7 @@ opkg_uninstall() {
 	[ -f /opt/etc/init.d/S99hrneo ] && /opt/etc/init.d/S99hrneo stop
 	[ -f /opt/etc/init.d/S99hrweb ] && /opt/etc/init.d/S99hrweb stop
 	
-	for pkg in hrneo hrweb hydraroute adguardhome-go ipset iptables jq node node-npm; do
-		if opkg list-installed | grep -q "^$pkg "; then
-			opkg remove "$pkg"
-		fi
-	done
+	opkg remove --force-depends hrweb hrneo hydraroute adguardhome-go ipset iptables jq node node-npm
 }
 
 files_uninstall() {
