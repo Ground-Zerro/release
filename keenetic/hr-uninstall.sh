@@ -26,8 +26,9 @@ opkg_uninstall() {
 	[ -f /opt/etc/init.d/S99hpanel ] && /opt/etc/init.d/S99hpanel stop
 	[ -f /opt/etc/init.d/S99hrpanel ] && /opt/etc/init.d/S99hrpanel stop
 	[ -f /opt/etc/init.d/S99hrneo ] && /opt/etc/init.d/S99hrneo stop
+	[ -f /opt/etc/init.d/S99hrweb ] && /opt/etc/init.d/S99hrweb stop
 	
-	for pkg in hrneo hydraroute adguardhome-go ipset iptables jq node-npm node; do
+	for pkg in hrneo hrweb hydraroute adguardhome-go ipset iptables jq node node-npm; do
 		if opkg list-installed | grep -q "^$pkg "; then
 			opkg remove "$pkg"
 		fi
@@ -43,12 +44,15 @@ files_uninstall() {
 	rm -f /opt/etc/ndm/netfilter.d/011-bypass6.sh
 	rm -f /opt/etc/ndm/netfilter.d/010-hydra.sh
 	rm -f /opt/etc/ndm/netfilter.d/015-hrneo.sh
+	rm -f /opt/etc/ndm/netfilter.d/016-hrweb.sh
 	rm -f /opt/etc/init.d/S52ipset
 	rm -f /opt/etc/init.d/S52hydra
 	rm -f /opt/etc/init.d/S99hpanel
 	rm -f /opt/etc/init.d/S99hrpanel
 	rm -f /opt/etc/init.d/S99hrneo
+	rm -f /opt/etc/init.d/S99hrweb
 	rm -f /opt/etc/init.d/S98hr
+	rm -f /opt/etc/opkg/customfeeds.conf
 	rm -f /opt/var/log/AdGuardHome.log
 	rm -f /opt/bin/agh
 	rm -f /opt/bin/hr
@@ -77,11 +81,8 @@ policy_uninstall() {
 }
 
 dns_on() {
-	echo "DoT add" >>"$LOG"
-	if ndmc -c show version | grep -oq 'dns-tls'; then
-		ndmc -c dns tls upstream 8.8.8.8 sni dns.google
-		ndmc -c dns tls upstream 9.9.9.9 sni dns.quad9.net
-	fi
+	echo "Delete hr.net host" >>"$LOG"
+	ndmc -c "no ip host hr.net"
 	echo "System DNS on" >>"$LOG"
 	ndmc -c 'opkg no dns-override'
 	ndmc -c 'system configuration save'
