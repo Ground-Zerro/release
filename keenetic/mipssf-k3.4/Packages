@@ -1,0 +1,76 @@
+Package: adguardhome-go-ipset
+Version: 0.107.70
+Architecture: mips-3.4
+Maintainer: Ground_Zerro, AdguardTeam
+Depends: libc, libssp, librt, libpthread, ca-bundle
+Section: net
+Priority: optional
+Filename: adguardhome-go-ipset_0.107.70_mips-3.4.ipk
+Size: 10941439
+Description: AdGuard Home fork with ipset settings in frontend.
+
+Package: hrneo
+Version: 0.2.0-1
+Architecture: mips-3.4
+Maintainer: Ground_Zerro
+Depends: ipset, iptables, tcpdump
+Section: net
+Priority: optional
+Filename: hrneo_0.2.0-1_mips-3.4.ipk
+Size: 2607755
+Description: HydraRoute Neo is a tool for managing traffic through VPN tunnels.
+
+Package: hrweb
+Version: 1.0.1-1-beta2
+Architecture: mips-3.4
+Maintainer: Ground_Zerro
+Depends: hrneo
+Section: net
+Priority: optional
+Filename: hrweb_1.0.1-1-beta2_mips-3.4.ipk
+Size: 3087666
+Description: WebUI for HydraRoute Neo
+
+Package: hydraroute
+Version: 1.1.0-final
+Architecture: mips-3.4
+Maintainer: Ground_Zerro
+Depends: ipset, iptables, adguardhome-go
+Section: net
+Priority: optional
+Filename: hydraroute_1.1.0-final_mips-3.4.ipk
+Size: 2987370
+Description: HydraRoute Classic - domain routing for Keenetic based on ipset and AGH integration + WebUI control panel
+
+Package: sing-box-go
+Version: 1.12.0‑beta.14
+Architecture: mips-3.4
+Maintainer: Entware team, https://entware.net
+Depends: libc, libssp, librt, libpthread
+Section: net
+Priority: optional
+Filename: sing-box-go_1.12.0-beta.14_mips-3.4.ipk
+Size: 12576817
+Description: Sing-box is a fast, customizable and univsersal proxy platform that
+
+Package: xray-core
+Version: 25.10.15
+Architecture: mips-3.4
+Maintainer: Entware team, https://entware.net
+Depends: libc, libssp, librt, libpthread, ca-bundle
+Section: net
+Priority: optional
+Filename: xray-core_25.10.15_mips-3.4.ipk
+Size: 9997518
+Description: Project X originates from XTLS protocol, providing a set of network tools.
+
+Package: xray
+Version: 25.10.15
+Architecture: mips-3.4
+Maintainer: Entware team, https://entware.net
+Depends: libc, libssp, librt, libpthread, xray-core
+Section: net
+Priority: optional
+Filename: xray_25.10.15_mips-3.4.ipk
+Size: 2895
+Description: scripts & configs.
