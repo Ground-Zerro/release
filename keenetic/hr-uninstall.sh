@@ -28,7 +28,7 @@ opkg_uninstall() {
 	[ -f /opt/etc/init.d/S99hrneo ] && /opt/etc/init.d/S99hrneo stop
 	[ -f /opt/etc/init.d/S99hrweb ] && /opt/etc/init.d/S99hrweb stop
 	
-	opkg remove --force-depends hrweb hrneo hydraroute adguardhome-go ipset iptables jq node node-npm
+	opkg remove hrneo hrweb ipset iptables jq hydraroute adguardhome-go node node-npm
 }
 
 files_uninstall() {
@@ -80,7 +80,7 @@ dns_on() {
 	echo "Delete hr.net host" >>"$LOG"
 	ndmc -c "no ip host hr.net"
 	echo "System DNS on" >>"$LOG"
-	ndmc -c 'opkg no dns-override'
+	ndmc -c 'no opkg dns-override'
 	ndmc -c 'system configuration save'
 	sleep 2
 }
