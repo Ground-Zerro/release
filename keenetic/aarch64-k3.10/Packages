@@ -1,0 +1,76 @@
+Package: adguardhome-go-ipset
+Version: 0.107.70
+Architecture: aarch64-3.10
+Maintainer: Ground_Zerro, AdguardTeam
+Depends: libc, libssp, librt, libpthread, ca-bundle
+Section: net
+Priority: optional
+Filename: adguardhome-go-ipset_0.107.70_aarch64-3.10.ipk
+Size: 10634533
+Description: AdGuard Home fork with ipset settings in frontend.
+
+Package: hrneo
+Version: 0.6.1-1
+Architecture: aarch64-3.10
+Maintainer: Ground_Zerro
+Depends: ipset, iptables
+Section: net
+Priority: optional
+Filename: hrneo_0.6.1-1_aarch64-3.10.ipk
+Size: 2768855
+Description: HydraRoute Neo is a tool for managing traffic through VPN tunnels.
+
+Package: hrweb
+Version: 1.6.6-1
+Architecture: aarch64-3.10
+Maintainer: Ground_Zerro
+Depends: hrneo
+Section: net
+Priority: optional
+Filename: hrweb_1.6.6-1_aarch64-3.10.ipk
+Size: 2926284
+Description: WebUI for HydraRoute Neo
+
+Package: hydraroute
+Version: 1.1.0-final
+Architecture: aarch64-3.10
+Maintainer: Ground_Zerro
+Depends: ipset, iptables, adguardhome-go
+Section: net
+Priority: optional
+Filename: hydraroute_1.1.0-final_aarch64-3.10.ipk
+Size: 2894847
+Description: HydraRoute Classic - domain routing for Keenetic based on ipset and AGH integration + WebUI control panel
+
+Package: sing-box-go
+Version: 1.13.0-alpha.34
+Architecture: aarch64-3.10
+Maintainer: Entware team, https://entware.net
+Depends: libc, libssp, librt, libpthread
+Section: net
+Priority: optional
+Filename: sing-box-go_1.13.0-alpha.34_aarch64-3.10.ipk
+Size: 10814213
+Description: Sing-box is a fast, customizable and universal proxy platform that
+
+Package: xray-core
+Version: 25.12.08
+Architecture: aarch64-3.10
+Maintainer: Entware team, https://entware.net
+Depends: libc, libssp, librt, libpthread, ca-bundle
+Section: net
+Priority: optional
+Filename: xray-core_25.12.08_aarch64-3.10.ipk
+Size: 10756140
+Description: Project X originates from XTLS protocol, providing a set of network tools.
+
+Package: xray
+Version: 25.12.08
+Architecture: aarch64-3.10
+Maintainer: Entware team, https://entware.net
+Depends: libc, libssp, librt, libpthread, xray-core
+Section: net
+Priority: optional
+Filename: xray_25.12.08_aarch64-3.10.ipk
+Size: 2914
+Description: scripts & configs.
