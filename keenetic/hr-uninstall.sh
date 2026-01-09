@@ -27,8 +27,18 @@ opkg_uninstall() {
 	[ -f /opt/etc/init.d/S99hrpanel ] && /opt/etc/init.d/S99hrpanel stop
 	[ -f /opt/etc/init.d/S99hrneo ] && /opt/etc/init.d/S99hrneo stop
 	[ -f /opt/etc/init.d/S99hrweb ] && /opt/etc/init.d/S99hrweb stop
-	
-	opkg remove hrneo hrweb ipset iptables jq hydraroute adguardhome-go node node-npm
+
+	opkg remove hrweb || true
+	opkg remove hrneo || true
+	opkg remove xray || true
+	opkg remove xray-core || true
+	opkg remove ipset || true
+	opkg remove iptables || true
+	opkg remove jq || true
+	opkg remove hydraroute || true
+	opkg remove adguardhome-go || true
+	opkg remove node-npm || true
+	opkg remove node || true
 }
 
 files_uninstall() {
