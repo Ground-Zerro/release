@@ -479,18 +479,28 @@ check_vpn_connectivity() {
 
     log_info "Проверка подключения через '$interface'..."
 
-    local test_url="http://connectivitycheck.gstatic.com/generate_204"
-    local response_code=$(curl -s -o /dev/null -w "%{http_code}" --interface "$interface" --connect-timeout 10 --max-time 15 "$test_url" 2>/dev/null)
+    local test_urls="http://connectivitycheck.gstatic.com/generate_204 http://www.msftconnecttest.com/connecttest.txt http://detectportal.firefox.com/success.txt"
+    local connection_ok=0
+    local last_response_code=""
 
-    if [ "$response_code" = "204" ]; then
-        log_success "Связь через интерфейс '$interface' работает"
-    elif [ "$response_code" = "200" ]; then
-        log_success "Связь через интерфейс '$interface' работает (HTTP 200)"
-    elif [ -n "$response_code" ] && [ "$response_code" != "000" ]; then
-        log_warn "Получен неожиданный ответ через '$interface': HTTP $response_code"
-        log_info "Связь есть, но ответ нестандартный (возможно captive portal)"
-    else
+    for test_url in $test_urls; do
+        local response_code=$(curl -s -o /dev/null -w "%{http_code}" --interface "$interface" --connect-timeout 10 --max-time 15 "$test_url" 2>/dev/null)
+        last_response_code="$response_code"
+
+        if [ "$response_code" = "204" ] || [ "$response_code" = "200" ]; then
+            log_success "Связь через интерфейс '$interface' работает"
+            connection_ok=1
+            break
+        elif [ -n "$response_code" ] && [ "$response_code" != "000" ]; then
+            log_success "Связь через интерфейс '$interface' работает (HTTP $response_code)"
+            connection_ok=1
+            break
+        fi
+    done
+
+    if [ $connection_ok -eq 0 ]; then
         log_error "Нет связи через интерфейс '$interface'"
+        log_info "Проверено несколько тестовых ресурсов - все недоступны"
         log_info "Возможные причины:"
         log_info "  - VPN подключение не установлено"
         log_info "  - Проблемы с маршрутизацией"
