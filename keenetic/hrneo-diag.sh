@@ -160,18 +160,46 @@ check_conflicts() {
 check_dependencies() {
     log_step "Проверка зависимостей"
 
+    local need_update=0
+
     if ! command -v jq >/dev/null 2>&1; then
         log_warn "Пакет jq не установлен"
-        log_info "Установка jq..."
-
-        if opkg update && opkg install jq; then
-            log_success "Пакет jq успешно установлен"
-        else
-            log_error "Не удалось установить jq"
-            return 1
-        fi
+        need_update=1
     else
         log_success "Пакет jq установлен"
+    fi
+
+    if ! command -v curl >/dev/null 2>&1; then
+        log_warn "Пакет curl не установлен"
+        need_update=1
+    else
+        log_success "Пакет curl установлен"
+    fi
+
+    if [ $need_update -eq 1 ]; then
+        log_info "Установка недостающих пакетов..."
+        if ! opkg update >/dev/null 2>&1; then
+            log_error "Не удалось обновить список пакетов"
+            return 1
+        fi
+
+        if ! command -v jq >/dev/null 2>&1; then
+            if opkg install jq >/dev/null 2>&1; then
+                log_success "Пакет jq успешно установлен"
+            else
+                log_error "Не удалось установить jq"
+                return 1
+            fi
+        fi
+
+        if ! command -v curl >/dev/null 2>&1; then
+            if opkg install curl >/dev/null 2>&1; then
+                log_success "Пакет curl успешно установлен"
+            else
+                log_error "Не удалось установить curl"
+                return 1
+            fi
+        fi
     fi
 
     return 0
@@ -335,24 +363,6 @@ check_policy_created() {
 
     log_info "Запрос информации о политике '$policy_name'..."
 
-    if ! command -v curl >/dev/null 2>&1; then
-        log_warn "curl не установлен, используется альтернативный метод"
-
-        if command -v ndmc >/dev/null 2>&1; then
-            if ndmc -c "show ip policy $policy_name" >/dev/null 2>&1; then
-                log_success "Политика '$policy_name' существует в роутере"
-                return 0
-            else
-                log_error "Политика '$policy_name' не создана в роутере"
-                return 1
-            fi
-        else
-            log_warn "Невозможно проверить политику (отсутствуют curl и ndmc)"
-            log_info "Пропуск проверки политики"
-            return 0
-        fi
-    fi
-
     local response=$(curl -s "$API_URL" 2>/dev/null || echo "{}")
 
     if echo "$response" | jq -e ".\"$policy_name\"" >/dev/null 2>&1; then
@@ -373,13 +383,6 @@ get_interface_from_policy() {
     local policy_name="$1"
 
     log_step "Извлечение интерфейса из политики"
-
-    if ! command -v curl >/dev/null 2>&1; then
-        log_warn "curl не установлен, невозможно получить информацию об интерфейсе"
-        log_info "Предполагается, что интерфейс настроен корректно"
-        echo "unknown"
-        return 0
-    fi
 
     local response=$(curl -s "$API_URL" 2>/dev/null || echo "{}")
 
@@ -466,16 +469,6 @@ check_vpn_connectivity() {
     local interface="$1"
 
     log_step "Проверка связности через VPN интерфейс"
-
-    if ! command -v curl >/dev/null 2>&1; then
-        log_info "curl не установлен, попытка установки..."
-        if opkg update >/dev/null 2>&1 && opkg install curl >/dev/null 2>&1; then
-            log_success "curl успешно установлен"
-        else
-            log_warn "Не удалось установить curl, пропуск проверки связности"
-            return 0
-        fi
-    fi
 
     log_info "Проверка подключения через '$interface'..."
 
@@ -758,11 +751,6 @@ check_routing() {
     log_step "Проверка конфигурации маршрутизации"
 
     if [ "$target_type" = "policy" ]; then
-        if ! command -v curl >/dev/null 2>&1; then
-            log_warn "curl не установлен, пропуск проверки конфигурации маршрутизации"
-            return 0
-        fi
-
         local response=$(curl -s "$API_URL" 2>/dev/null || echo "{}")
         local mark=$(echo "$response" | jq -r ".\"$target_name\".mark // empty" 2>/dev/null)
         local table=$(echo "$response" | jq -r ".\"$target_name\".table4 // empty" 2>/dev/null)
@@ -857,6 +845,8 @@ main() {
 
     check_routing "$ip_address" "$target_name" "$target_type" || exit 1
 
+    show_device_routing_table
+    
     echo "" >&2
     echo "==========================================" >&2
     log_success "ПРОВЕРКА ЗАВЕРШЕНА"
@@ -883,17 +873,10 @@ main() {
     log_info "  - Браузер/смартфон НЕ используют собственный DNS сервер"
     log_info "  - Отсутствие включенного VPN/прокси на устройстве"
     echo "" >&2
-
-    show_device_routing_table
 }
 
 show_device_routing_table() {
     log_step "Устройства и сегменты сети"
-
-    if ! command -v curl >/dev/null 2>&1; then
-        log_warn "curl не установлен, пропуск вывода таблицы устройств"
-        return 0
-    fi
 
     local RCI="localhost:79/rci"
     local hotspot_json=$(curl -s "$RCI/show/ip/hotspot" 2>/dev/null)
