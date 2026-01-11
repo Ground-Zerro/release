@@ -32,6 +32,71 @@ log_step() {
     echo "==> $1" >&2
 }
 
+check_hrneo_installed() {
+    log_step "Проверка установки Hydra Route Neo"
+
+    if opkg list-installed | grep -q '^hrneo '; then
+        local version=$(opkg list-installed | grep '^hrneo ' | awk '{print $3}')
+        log_success "Hydra Route Neo установлен (версия: $version)"
+        return 0
+    else
+        log_error "Hydra Route Neo не установлен"
+        log_info "Установите пакет hrneo для работы выборочной маршрутизации"
+        return 1
+    fi
+}
+
+check_critical_files() {
+    log_step "Проверка критически важных файлов"
+
+    local all_files_exist=1
+
+    if [ ! -f "/opt/etc/HydraRoute/domain.conf" ]; then
+        log_error "Критический файл отсутствует: /opt/etc/HydraRoute/domain.conf"
+        log_info "Этот файл содержит список доменов для маршрутизации"
+        all_files_exist=0
+    else
+        log_success "Файл domain.conf найден"
+    fi
+
+    if [ ! -f "/opt/etc/HydraRoute/hrneo.conf" ]; then
+        log_error "Критический файл отсутствует: /opt/etc/HydraRoute/hrneo.conf"
+        log_info "Этот файл содержит основную конфигурацию hrneo"
+        all_files_exist=0
+    else
+        log_success "Файл hrneo.conf найден"
+    fi
+
+    if [ ! -f "/opt/etc/HydraRoute/ip.list" ]; then
+        log_error "Критический файл отсутствует: /opt/etc/HydraRoute/ip.list"
+        log_info "Этот файл содержит список IP-адресов/подсетей для маршрутизации"
+        all_files_exist=0
+    else
+        log_success "Файл ip.list найден"
+    fi
+
+    if [ $all_files_exist -eq 0 ]; then
+        log_info "Переустановите пакет hrneo или восстановите файлы из резервной копии"
+        return 1
+    fi
+
+    return 0
+}
+
+check_nflog_module() {
+    log_step "Проверка модуля ядра NFLOG"
+
+    if [ ! -f "/lib/modules/4.9-ndm-5/xt_NFLOG.ko" ]; then
+        log_error "Компонент ОС: Пакет расширения «Xtables-addons для Netfilter» не установлен"
+        log_info "Маршрутизация не будет работать!"
+        log_info "Установите его в роутере: Управление -> Параметры системы -> Показать компоненты"
+        return 1
+    else
+        log_success "Модуль ядра xt_NFLOG.ko найден"
+        return 0
+    fi
+}
+
 check_dependencies() {
     log_step "Проверка зависимостей"
 
@@ -61,6 +126,7 @@ read_config() {
     DIRECT_ROUTE_ENABLED=$(grep '^DirectRouteEnabled=' "$CONFIG_PATH" | cut -d'=' -f2)
     INTERFACE_FWMARK_START=$(grep '^InterfaceFwMarkStart=' "$CONFIG_PATH" | cut -d'=' -f2)
     INTERFACE_TABLE_START=$(grep '^InterfaceTableStart=' "$CONFIG_PATH" | cut -d'=' -f2)
+    IPSET_ENABLE_TIMEOUT=$(grep '^IpsetEnableTimeout=' "$CONFIG_PATH" | cut -d'=' -f2)
 
     if [ -z "$DIRECT_ROUTE_ENABLED" ]; then
         DIRECT_ROUTE_ENABLED="true"
@@ -72,6 +138,10 @@ read_config() {
 
     if [ -z "$INTERFACE_TABLE_START" ]; then
         INTERFACE_TABLE_START="301"
+    fi
+
+    if [ -z "$IPSET_ENABLE_TIMEOUT" ]; then
+        IPSET_ENABLE_TIMEOUT="false"
     fi
 
     log_success "Конфигурация загружена (DirectRoute: $DIRECT_ROUTE_ENABLED)"
@@ -256,10 +326,19 @@ get_interface_from_policy() {
     local keenetic_interface=$(echo "$response" | jq -r ".\"$policy_name\" | .. | .route? // empty | .[] | select(.destination == \"0.0.0.0/0\") | .interface" 2>/dev/null | head -n1)
 
     if [ -z "$keenetic_interface" ] || [ "$keenetic_interface" = "null" ]; then
-        log_warn "Интерфейс не указан в политике '$policy_name' или политика использует автоматический выбор"
-        log_info "Пропуск проверки интерфейса для этой политики"
-        echo "unknown"
-        return 0
+        log_error "В политике '$policy_name' не указано VPN подключение"
+        log_info "Политика существует, но не содержит маршрутов"
+        log_info "Необходимо добавить подключение в политику '$policy_name' через веб-интерфейс роутера:"
+        log_info "  Интернет -> Приоритеты подключений -> $policy_name -> активировать необходимое подключение"
+        return 1
+    fi
+
+    if echo "$keenetic_interface" | grep -qE '^(GigabitEthernet|Bridge)'; then
+        log_error "В политике '$policy_name' указан локальный интерфейс вместо VPN"
+        log_info "Найден интерфейс: $keenetic_interface"
+        log_info "Необходимо указать VPN подключение (Wireguard, VLESS, Proxy и т.д.)"
+        log_info "Через веб-интерфейс: Интернет-фильтр -> Списки -> $policy_name -> Подключение"
+        return 1
     fi
 
     log_info "Интерфейс Keenetic: $keenetic_interface"
@@ -373,6 +452,26 @@ check_ipset_exists() {
             count="0"
         fi
         log_success "IPSet '$ipset_name' создан (записей: $count)"
+
+        local ipset_header=$(ipset list "$ipset_name" | grep '^Header:')
+        local ipset_has_timeout=0
+        if echo "$ipset_header" | grep -q 'timeout'; then
+            ipset_has_timeout=1
+        fi
+
+        if [ "$IPSET_ENABLE_TIMEOUT" = "true" ] && [ $ipset_has_timeout -eq 0 ]; then
+            log_error "Несоответствие конфигурации ipset '$ipset_name'"
+            log_info "В конфигурации: IpsetEnableTimeout=true (таймаут включен)"
+            log_info "В системе: ipset без таймаута"
+            log_info "Необходимо перезагрузить роутер для применения настроек"
+            return 1
+        elif [ "$IPSET_ENABLE_TIMEOUT" = "false" ] && [ $ipset_has_timeout -eq 1 ]; then
+            log_error "Несоответствие конфигурации ipset '$ipset_name'"
+            log_info "В конфигурации: IpsetEnableTimeout=false (таймаут отключен)"
+            log_info "В системе: ipset с таймаутом"
+            log_info "Необходимо перезагрузить роутер для применения настроек"
+            return 1
+        fi
     else
         log_error "IPSet '$ipset_name' не создан"
         return 1
@@ -385,6 +484,26 @@ check_ipset_exists() {
             count="0"
         fi
         log_success "IPSet '$ipset_name_v6' создан (записей: $count)"
+
+        local ipset_header=$(ipset list "$ipset_name_v6" | grep '^Header:')
+        local ipset_has_timeout=0
+        if echo "$ipset_header" | grep -q 'timeout'; then
+            ipset_has_timeout=1
+        fi
+
+        if [ "$IPSET_ENABLE_TIMEOUT" = "true" ] && [ $ipset_has_timeout -eq 0 ]; then
+            log_error "Несоответствие конфигурации ipset '$ipset_name_v6'"
+            log_info "В конфигурации: IpsetEnableTimeout=true (таймаут включен)"
+            log_info "В системе: ipset без таймаута"
+            log_info "Необходимо перезагрузить роутер для применения настроек"
+            return 1
+        elif [ "$IPSET_ENABLE_TIMEOUT" = "false" ] && [ $ipset_has_timeout -eq 1 ]; then
+            log_error "Несоответствие конфигурации ipset '$ipset_name_v6'"
+            log_info "В конфигурации: IpsetEnableTimeout=false (таймаут отключен)"
+            log_info "В системе: ipset с таймаутом"
+            log_info "Необходимо перезагрузить роутер для применения настроек"
+            return 1
+        fi
     else
         log_warn "IPSet '$ipset_name_v6' не создан (IPv6)"
     fi
@@ -441,6 +560,9 @@ check_iptables_rules() {
     if ip6tables -w -t mangle -S PREROUTING 2>/dev/null | grep -q -- "--match-set ${ipset_name}v6 "; then
         found_ipv6=1
         log_success "Правила ip6tables для '${ipset_name}v6' (IPv6) найдены"
+
+        local rule_count=$(ip6tables -w -t mangle -S PREROUTING 2>/dev/null | grep -c -- "--match-set ${ipset_name}v6 " || echo "0")
+        log_info "Количество правил IPv6: $rule_count"
     else
         log_warn "Правила ip6tables для '${ipset_name}v6' (IPv6) не найдены"
     fi
@@ -549,10 +671,9 @@ check_ip_in_ipset() {
         log_success "IP адрес $ip_address добавлен в ipset '$ipset_name'"
     else
         log_error "IP адрес $ip_address НЕ добавлен в ipset '$ipset_name' после $max_attempts попыток"
-        log_info "Возможные причины:"
-        log_info "  - DNS запрос не прошел через роутер (проверьте настройки DNS на устройстве)"
-        log_info "  - NFLOG мониторинг не работает (проверьте правила iptables OUTPUT)"
-        log_info "  - Сервис hrneo не обрабатывает DNS ответы"
+        log_info "Сервис hrneo не обнаружил DNS ответ, возможная причина:"
+        log_info "  - DNS-запрос не прошел через интерфейс br0. Вероятна утечка DNS"
+        log_info "    через VPN подклчюение, проверьте настройки маршрутизации DNS."
         return 1
     fi
 
@@ -612,6 +733,12 @@ main() {
     echo "==========================================" >&2
     echo "" >&2
 
+    check_hrneo_installed || exit 1
+
+    check_critical_files || exit 1
+
+    check_nflog_module || exit 1
+
     check_dependencies
 
     read_config
@@ -660,27 +787,29 @@ main() {
 
     echo "" >&2
     echo "==========================================" >&2
-    log_success "ВСЕ ПРОВЕРКИ ПРОЙДЕНЫ УСПЕШНО"
+    log_success "ПРОВЕРКА ЗАВЕРШЕНА"
     echo "==========================================" >&2
     echo "" >&2
     log_info "Конфигурация выборочной маршрутизации на роутере корректна."
     echo "" >&2
     log_info "Диагностика на роутере проверяет только конфигурацию, но не может"
-    log_info "проверить реальную маршрутизацию клиентских устройств (правила"
-    log_info "применяются к FORWARD, а не к OUTPUT трафику роутера)."
+    log_info "проверить маршрутизацию на клиентских устройствах."
     echo "" >&2
-    log_info "Для проверки реальной маршрутизации выполните с клиентского устройства:"
+    log_info "Для проверки маршрутизации выполните на устройстве:"
     log_info "  Windows: tracert $domain"
     log_info "  Linux/Mac: traceroute $domain"
     echo "" >&2
     log_info "Ожидаемый результат:"
     log_info "  1-й хоп: IP роутера"
-    log_info "  2-й хоп: VPN шлюз (например, 10.25.0.1)"
+    log_info "  2-й хоп: VPN шлюз"
+    echo "" >&2
+    log_info "ВАЖНО: traceroute НЕ работает для Proxy интерфейсов (vless, vmess,"
+    log_info "trojan, ss, socks, http) из-за отсутствия поддержки ICMP протокола."
     echo "" >&2
     log_info "Если маршрутизация не работает, проверьте настройки устройства:"
     log_info "  - DNS сервер: IP роутера"
-    log_info "  - Шлюз по умолчанию: IP роутера"
-    log_info "  - Отсутствие VPN/прокси на устройстве"
+    log_info "  - Браузер/смартфон НЕ используют собственный DNS сервер"
+    log_info "  - Отсутствие включенного VPN/прокси на устройстве"
     echo "" >&2
 }
 
