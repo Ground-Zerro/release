@@ -56,7 +56,7 @@ check_critical_files() {
         log_info "Этот файл содержит список доменов для маршрутизации"
         all_files_exist=0
     else
-        log_success "Файл domain.conf найден"
+        log_success "Файл доменов"
     fi
 
     if [ ! -f "/opt/etc/HydraRoute/hrneo.conf" ]; then
@@ -64,7 +64,7 @@ check_critical_files() {
         log_info "Этот файл содержит основную конфигурацию hrneo"
         all_files_exist=0
     else
-        log_success "Файл hrneo.conf найден"
+        log_success "Файл конфигурации"
     fi
 
     if [ ! -f "/opt/etc/HydraRoute/ip.list" ]; then
@@ -72,7 +72,31 @@ check_critical_files() {
         log_info "Этот файл содержит список IP-адресов/подсетей для маршрутизации"
         all_files_exist=0
     else
-        log_success "Файл ip.list найден"
+        log_success "Файл CIDR"
+    fi
+
+    if [ ! -f "/opt/etc/ndm/netfilter.d/015-hrneo.sh" ]; then
+        log_error "Критический файл отсутствует: /opt/etc/ndm/netfilter.d/015-hrneo.sh"
+        log_info "Этот файл поддерживает в актуальном состоянии правила маршрутизации hrneo"
+        all_files_exist=0
+    else
+        log_success "Файл актуализации iptables"
+    fi
+
+    if [ ! -f "/opt/etc/init.d/S99hrneo" ]; then
+        log_error "Критический файл отсутствует: /opt/etc/init.d/S99hrneo"
+        log_info "Этот файл отвечает за управление работой службы hrneo"
+        all_files_exist=0
+    else
+        log_success "Инит скрипт"
+    fi
+
+    if [ ! -f "/opt/bin/hrneo" ]; then
+        log_error "Критический файл отсутствует: /opt/bin/hrneo"
+        log_info "Это исполняемый файл hrneo"
+        all_files_exist=0
+    else
+        log_success "Бинарник"
     fi
 
     if [ $all_files_exist -eq 0 ]; then
@@ -95,6 +119,42 @@ check_nflog_module() {
         log_success "Модуль ядра xt_NFLOG.ko найден"
         return 0
     fi
+}
+
+check_conflicts() {
+    log_step "Проверка конфликтующего ПО"
+
+    local conflict_found=0
+
+    if [ -f "/opt/sbin/xkeen" ] || [ -d "/opt/sbin/.xkeen" ] || [ -f "/opt/sbin/mihomo_bak" ]; then
+        conflict_found=1
+    fi
+
+    if [ -d "/opt/etc/xray/configs" ] || [ -d "/opt/etc/xray/dat" ] || [ -d "/opt/etc/xkeen" ]; then
+        conflict_found=1
+    fi
+
+    if [ -f "/opt/etc/ndm/netfilter.d/proxy.sh" ]; then
+        conflict_found=1
+    fi
+
+    if [ -d "/opt/var/log/xkeen" ] || [ -d "/opt/tmp/xkeen" ]; then
+        conflict_found=1
+    fi
+
+    if grep -q '^xkeen:' /etc/passwd 2>/dev/null; then
+        conflict_found=1
+    fi
+
+    if [ $conflict_found -eq 1 ]; then
+        log_error "Обнаружен конфликт: в системе найдены компоненты xKeen"
+        log_info "Hydra Route Neo и xKeen не могут работать одновременно"
+        log_info "Даже если пакет xkeen удален, в системе могут оставаться его файлы и настройки"
+        return 1
+    fi
+
+    log_success "Конфликтующее ПО не обнаружено"
+    return 0
 }
 
 check_dependencies() {
@@ -636,7 +696,7 @@ resolve_domain() {
         return 1
     fi
 
-    log_success "Домен разрешается корректно в IP: $ip_address"
+    log_success "Домен в IP разрешается корректно"
     echo "$ip_address"
 }
 
@@ -739,6 +799,8 @@ main() {
 
     check_nflog_module || exit 1
 
+    check_conflicts || exit 1
+
     check_dependencies
 
     read_config
@@ -793,9 +855,9 @@ main() {
     log_info "Конфигурация выборочной маршрутизации на роутере корректна."
     echo "" >&2
     log_info "Диагностика на роутере проверяет только конфигурацию, но не может"
-    log_info "проверить маршрутизацию на клиентских устройствах."
+    log_info "проверить маршрутизацию клиентских устройств (ПК/смарфон/Smatr-TV)"
     echo "" >&2
-    log_info "Для проверки маршрутизации выполните на устройстве:"
+    log_info "Для проверки маршрутизации выполните с клиентского устройства:"
     log_info "  Windows: tracert $domain"
     log_info "  Linux/Mac: traceroute $domain"
     echo "" >&2
@@ -811,6 +873,170 @@ main() {
     log_info "  - Браузер/смартфон НЕ используют собственный DNS сервер"
     log_info "  - Отсутствие включенного VPN/прокси на устройстве"
     echo "" >&2
+
+    show_device_routing_table
+}
+
+show_device_routing_table() {
+    log_step "Устройства и сегменты сети"
+
+    if ! command -v curl >/dev/null 2>&1; then
+        log_warn "curl не установлен, пропуск вывода таблицы устройств"
+        return 0
+    fi
+
+    local RCI="localhost:79/rci"
+    local hotspot_json=$(curl -s "$RCI/show/ip/hotspot" 2>/dev/null)
+    local config_data=$(curl -s "$RCI/show/running-config" 2>/dev/null)
+
+    if [ -z "$hotspot_json" ] || [ -z "$config_data" ]; then
+        log_warn "Не удалось получить данные о хостах и сегментах сети"
+        return 0
+    fi
+
+    echo "$config_data" | jq -r '.message[]' | awk '
+BEGIN { OFS="\t" }
+{ sub(/\r/, "") }
+
+/^ip policy / { last_policy = $3 }
+/description / && last_policy != "" {
+    desc = $0; sub(/^[ \t]*description /, "", desc); gsub(/"/, "", desc);
+    print "N", last_policy, desc;
+}
+/^!/ { last_policy = "" }
+
+/^interface / { cur_iface = $2 }
+/description / && cur_iface != "" {
+    desc = $0; sub(/^[ \t]*description /, "", desc); gsub(/"/, "", desc);
+    print "D", cur_iface, desc;
+}
+/^interface Bridge/ || /^interface GuestBridge/ {
+    print "I", $2;
+}
+/^!/ { cur_iface = "" }
+
+/^ip hotspot/ { in_hs = 1 }
+in_hs && /host [0-9a-fA-F:]{17} policy / {
+    match($0, /[0-9a-fA-F:]{17}/);
+    mac = substr($0, RSTART, RLENGTH);
+    temp = $0; sub(/.*policy /, "", temp); split(temp, a, " ");
+    print "B", mac, a[1];
+}
+in_hs && /policy / && !/host / {
+    split($0, parts, " ");
+    for (i=1; i<=NF; i++) {
+        if ($i == "policy") {
+            iface = $(i+1);
+            mode = $(i+2);
+            if (iface != "") print "S", iface, mode;
+            break;
+        }
+    }
+}
+/^!/ { in_hs = 0 }
+' | jq -R -s -r --argjson hs "$hotspot_json" '
+    (split("\n") | map(select(length > 0) | split("\t")) | reduce .[] as $row (
+        {names:{}, bindings:{}, iface_descs:{}, iface_pols:{}, bridges:[]};
+        if   $row[0] == "N" then .names[$row[1]] = $row[2]
+        elif $row[0] == "D" then .iface_descs[$row[1]] = $row[2]
+        elif $row[0] == "I" then .bridges += [$row[1]]
+        elif $row[0] == "B" then .bindings[$row[1]] = $row[2]
+        elif $row[0] == "S" then .iface_pols[$row[1]] = $row[2]
+        else . end
+    )) as $rules |
+
+    (
+        [
+            $hs.host[] |
+            {
+                name: ((.name | select(length > 0)) // (.hostname | select(length > 0)) // "Без имени"),
+                info: ("IP: " + (.ip // "-") + " | MAC: " + .mac),
+                active: .active,
+                type: "host",
+                policy_id: ($rules.bindings[.mac] // "default")
+            }
+        ]
+        +
+        [
+            ($rules.bridges | unique)[] |
+            {
+                key: .,
+                pol: ($rules.iface_pols[.] // "default")
+            } |
+            {
+                name: ($rules.iface_descs[.key] // .key),
+                info: ("Интерфейс: " + .key),
+                active: true,
+                type: "segment",
+                policy_id: (if .pol == "permit" then "default" else .pol end)
+            }
+        ]
+    )
+    | map(
+        .policy_name = (
+            if .policy_id == "default" then
+                "default"
+            else
+                ($rules.names[.policy_id] // .policy_id)
+            end
+        )
+    )
+    | {
+        default: map(select(.policy_name == "default")),
+        other: map(select(.policy_name != "default")) | group_by(.policy_name)
+    }
+    |
+    if (.default | length) > 0 then
+        (
+            "МАРШРУТИЗАЦИЯ ДОСТУПНА ДЛЯ ЭТИХ УСТРОЙСТВ И СЕГМЕНТОВ СЕТИ:",
+            "==================================================",
+            (
+                .default | sort_by(
+                    (.type != "segment"),
+                    (.active | not),
+                    .name
+                )[] |
+                if .type == "segment" then
+                    "  [СЕГМЕНТ] \(.name)",
+                    "    \(.info)"
+                else
+                    "  • \(.name)",
+                    "    \(.info) | \((if .active then "ONLINE" else "offline" end))"
+                end
+            ),
+            ""
+        )
+    else empty end,
+
+    if (.other | length) > 0 then
+        (
+            "МАРШРУТИЗАЦИЯ НЕ ДОСТУПНА ДЛЯ ЭТИХ УСТРОЙСТВ И СЕГМЕНТОВ СЕТИ:",
+            "==================================================",
+            (
+                .other[] |
+                "Политика: \(.[0].policy_name)",
+                "--------------------------------------------------",
+                (
+                    sort_by(
+                        (.type != "segment"),
+                        (.active | not),
+                        .name
+                    )[] |
+                    if .type == "segment" then
+                        "  [СЕГМЕНТ] \(.name)",
+                        "    \(.info)"
+                    else
+                        "  • \(.name)",
+                        "    \(.info) | \((if .active then "ONLINE" else "offline" end))"
+                    end
+                ),
+                ""
+            )
+        )
+    else empty end
+' >&2
+
+    return 0
 }
 
 main
