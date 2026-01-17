@@ -50,10 +50,13 @@ function parseControlFields(content) {
 function extractControlFromIpk(ipkPath) {
   const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'ipk-'));
   try {
-    const controlTar = execSync(`tar -xOf "${ipkPath}" control.tar.gz`);
+    const controlTar = execSync(`tar -xOf "${ipkPath}" ./control.tar.gz 2>/dev/null || tar -xOf "${ipkPath}" control.tar.gz`);
     fs.writeFileSync(path.join(tmpDir, 'control.tar.gz'), controlTar);
     execSync(`tar -xzf control.tar.gz`, { cwd: tmpDir });
-    const controlContent = fs.readFileSync(path.join(tmpDir, 'control')).toString();
+    const controlPath = fs.existsSync(path.join(tmpDir, 'control'))
+      ? path.join(tmpDir, 'control')
+      : path.join(tmpDir, './control');
+    const controlContent = fs.readFileSync(controlPath).toString();
     return parseControlFields(controlContent);
   } catch (e) {
     console.error(`⚠️ Failed to parse .ipk: ${ipkPath}`);
@@ -101,13 +104,13 @@ function generatePackagesFiles(dir, relPath) {
     const block = [
       `Package: ${control.Package}`,
       `Version: ${control.Version}`,
-      `Architecture: ${control.Architecture}`,
-      `Maintainer: ${control.Maintainer || 'unknown'}`,
       `Depends: ${control.Depends || ''}`,
-      `Section: ${control.Section || 'base'}`,
-      `Priority: ${control.Priority || 'optional'}`,
+      `Section: ${control.Section || 'net'}`,
+      `Architecture: ${control.Architecture}`,
+      `Installed-Size: ${control['Installed-Size'] || '0'}`,
       `Filename: ${entry.filename}`,
       `Size: ${entry.size}`,
+      `Maintainer: ${control.Maintainer || 'unknown'}`,
       `Description: ${control.Description || ''}`,
       ''
     ].join('\n');
