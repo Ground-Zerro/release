@@ -38,12 +38,21 @@ check_hrneo_installed() {
     if opkg list-installed | grep -q '^hrneo '; then
         local version=$(opkg list-installed | grep '^hrneo ' | awk '{print $3}')
         log_success "Hydra Route Neo установлен (версия: $version)"
-        return 0
     else
         log_error "Hydra Route Neo не установлен"
         log_info "Установите пакет hrneo для работы выборочной маршрутизации"
         return 1
     fi
+
+    if opkg list-installed | grep -q '^hrweb '; then
+        local version=$(opkg list-installed | grep '^hrweb ' | awk '{print $3}')
+        log_success "Hydra Route Web-UI установлен (версия: $version)"
+    else
+        log_warn "Hydra Route Web-UI не установлен"
+        log_info "Web-интерфейс недоступен, но диагностика может быть продолжена"
+    fi
+
+    return 0
 }
 
 check_critical_files() {
@@ -291,7 +300,7 @@ check_domain_in_config() {
         done
         IFS="$old_ifs"
 
-        if [ $found -eq 1 ] || [ $found_disabled -eq 1 ]; then
+        if [ $found -eq 1 ]; then
             break
         fi
     done < "$DOMAIN_CONF"
@@ -584,16 +593,14 @@ check_nflog_rules() {
         nflog_found_ipv4=1
         log_success "Правила NFLOG для мониторинга DNS (IPv4) найдены"
     else
-        log_error "Правила NFLOG для мониторинга DNS (IPv4) не найдены"
-        log_info "DNS ответы не будут обрабатываться, IP не будут добавляться в ipset"
-        return 1
+        log_warn "Правила NFLOG для мониторинга DNS (IPv4) отсутствуют"
     fi
 
     if ip6tables -w -t mangle -S OUTPUT 2>/dev/null | grep -q -- "--nflog-group 100"; then
         nflog_found_ipv6=1
         log_success "Правила NFLOG для мониторинга DNS (IPv6) найдены"
     else
-        log_warn "Правила NFLOG для мониторинга DNS (IPv6) не найдены"
+        log_warn "Правила NFLOG для мониторинга DNS (IPv6) отсутствуют"
     fi
 
     return 0
@@ -837,7 +844,7 @@ main() {
 
     check_iptables_rules "$target_name" "$target_type" || exit 1
 
-    check_nflog_rules || exit 1
+    check_nflog_rules
 
     ip_address=$(resolve_domain "$domain") || exit 1
 
