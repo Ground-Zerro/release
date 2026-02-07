@@ -1,0 +1,87 @@
+Package: 3x-ui
+Version: 2.8.8-6
+Depends: xray-core
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 0
+Filename: 3x-ui_2.8.8-6_aarch64-3.10.ipk
+Size: 18938597
+Maintainer: MHSanaei
+Description: Xray panel supporting multi-protocol multi-user expire day & traffic & IP limit (Vmess, Vless, Trojan, ShadowSocks, Wireguard, Tunnel, Mixed, HTTP)
+
+Package: adguardhome-go-ipset
+Version: 0.107.70
+Depends: libc, libssp, librt, libpthread, ca-bundle
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 0
+Filename: adguardhome-go-ipset_0.107.70_aarch64-3.10.ipk
+Size: 10634533
+Maintainer: Ground_Zerro, AdguardTeam
+Description: AdGuard Home fork with ipset settings in frontend.
+
+Package: hrneo
+Version: 0.17.1-1
+Depends: libc, ipset, iptables
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 1832675
+Filename: hrneo_0.17.1-1_aarch64-3.10.ipk
+Size: 1833681
+Maintainer: Ground_Zerro
+Description: HydraRoute Neo is a tool for managing traffic through VPN tunnels.
+
+Package: hrweb
+Version: 1.8.1-1
+Depends: libc
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 3000481
+Filename: hrweb_1.8.1-1_aarch64-3.10.ipk
+Size: 2916104
+Maintainer: Ground_Zerro
+Description: WebUI for HydraRoute Neo
+
+Package: hydraroute
+Version: 1.1.0-final
+Depends: ipset, iptables, adguardhome-go
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 0
+Filename: hydraroute_1.1.0-final_aarch64-3.10.ipk
+Size: 2894847
+Maintainer: Ground_Zerro
+Description: HydraRoute Classic - domain routing for Keenetic based on ipset and AGH integration + WebUI control panel
+
+Package: sing-box-go
+Version: 1.13.0-alpha.34
+Depends: libc, libssp, librt, libpthread
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 0
+Filename: sing-box-go_1.13.0-alpha.34_aarch64-3.10.ipk
+Size: 10814213
+Maintainer: Entware team, https://entware.net
+Description: Sing-box is a fast, customizable and universal proxy platform that
+
+Package: xray-core
+Version: v26.2.6
+Depends: libc, libssp, librt, libpthread, ca-bundle
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 11488824
+Filename: xray-core_v26.2.6_aarch64-3.10.ipk
+Size: 11126001
+Maintainer: Entware team, https://entware.net
+Description: Project X originates from XTLS protocol, providing a set of network tools.
+
+Package: xray
+Version: v26.2.6
+Depends: libc, libssp, librt, libpthread, xray-core
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 4467
+Filename: xray_v26.2.6_aarch64-3.10.ipk
+Size: 2840
+Maintainer: Entware team, https://entware.net
+Description: scripts & configs.
