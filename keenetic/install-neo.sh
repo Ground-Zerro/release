@@ -1,5 +1,17 @@
 #!/bin/sh
 
+if [ "$LOGNAME" != "root" ]; then
+  echo ""
+  echo "    Вы вошли как "$LOGNAME""
+  echo ""
+  echo "    Не используйте вход через CLI для устанвоки HydraRoute,"
+  echo "    подключитесь напрямую к Entware."
+  echo ""
+  echo "    Установка прервана..."
+  echo ""
+  exit 1
+fi
+
 echo "Updating package list..."
 opkg update
 
