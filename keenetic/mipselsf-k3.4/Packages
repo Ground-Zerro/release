@@ -1,0 +1,87 @@
+Package: 3x-ui
+Version: 2.8.10-2
+Depends: xray-core
+Section: net
+Architecture: mipsel-3.4
+Installed-Size: 0
+Filename: 3x-ui_2.8.10-2_mipsel-3.4.ipk
+Size: 18718331
+Maintainer: MHSanaei
+Description: Xray panel supporting multi-protocol multi-user expire day & traffic & IP limit (Vmess, Vless, Trojan, ShadowSocks, Wireguard, Tunnel, Mixed, HTTP)
+
+Package: adguardhome-go-ipset
+Version: 0.107.70
+Depends: libc, libssp, librt, libpthread, ca-bundle
+Section: net
+Architecture: mipsel-3.4
+Installed-Size: 0
+Filename: adguardhome-go-ipset_0.107.70_mipsel-3.4.ipk
+Size: 10788992
+Maintainer: Ground_Zerro, AdguardTeam
+Description: AdGuard Home fork with ipset settings in frontend.
+
+Package: hrneo
+Version: 2.4.0-1
+Depends: libc, ipset, iptables
+Section: net
+Architecture: mipsel-3.4
+Installed-Size: 663936
+Filename: hrneo_2.4.0-1_mipsel-3.4.ipk
+Size: 299403
+Maintainer: Ground_Zerro
+Description: DNS-based policy routing daemon for Keenetic
+
+Package: hrweb
+Version: 1.26.0-1
+Depends: libc
+Section: net
+Architecture: mipsel-3.4
+Installed-Size: 9110180
+Filename: hrweb_1.26.0-1_mipsel-3.4.ipk
+Size: 3232006
+Maintainer: Ground_Zerro
+Description: WebUI for HydraRoute Neo
+
+Package: hydraroute
+Version: 1.1.0-final
+Depends: ipset, iptables, adguardhome-go
+Section: net
+Architecture: mipsel-3.4
+Installed-Size: 0
+Filename: hydraroute_1.1.0-final_mipsel-3.4.ipk
+Size: 2936940
+Maintainer: Ground_Zerro
+Description: HydraRoute Classic - domain routing for Keenetic based on ipset and AGH integration + WebUI control panel
+
+Package: sing-box-go
+Version: 1.13.4
+Depends: libc, libssp, librt, libpthread
+Section: net
+Architecture: mipsel-3.4
+Installed-Size: 0
+Filename: sing-box-go_1.13.4_mipsel-3.4.ipk
+Size: 11339373
+Maintainer: Entware team, https://entware.net
+Description: Sing-box is a fast, customizable and universal proxy platform that
+
+Package: xray-core
+Version: v26.4.25
+Depends: libc, libssp, librt, libpthread, ca-bundle
+Section: net
+Architecture: mipsel-3.4
+Installed-Size: 34406557
+Filename: xray-core_v26.4.25_mipsel-3.4.ipk
+Size: 10532094
+Maintainer: Entware team, https://entware.net
+Description: Project X originates from XTLS protocol, providing a set of network tools.
+
+Package: xray
+Version: v26.4.25
+Depends: libc, libssp, librt, libpthread, xray-core
+Section: net
+Architecture: mipsel-3.4
+Installed-Size: 4467
+Filename: xray_v26.4.25_mipsel-3.4.ipk
+Size: 2850
+Maintainer: Entware team, https://entware.net
+Description: scripts & configs.
