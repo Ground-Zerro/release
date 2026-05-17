@@ -71,6 +71,9 @@ files_uninstall() {
 	if [ -d "/opt/etc/AdGuardHome" ] && [ "/opt/etc/AdGuardHome" != "/" ]; then
 		rm -rf /opt/etc/AdGuardHome
 	fi
+	if [ -d "/opt/etc/xray" ] && [ "/opt/etc/xray" != "/" ]; then
+		rm -rf /opt/etc/xray
+	fi
 }
 
 policy_uninstall() {
