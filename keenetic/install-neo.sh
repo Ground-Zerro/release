@@ -13,8 +13,8 @@ if [ "$LOGNAME" != "root" ]; then
 fi
 
 FEED_CONF="/opt/etc/opkg/customfeeds.conf"
-OLD_BASE="https://ground-zerro.github.io/release/keenetic/"
-NEW_BASE="https://git.zerrolabs.org/Ground-Zerro/release/pages/keenetic/"
+OLD_BASE="https://git.zerrolabs.org/Ground-Zerro/release/pages/keenetic/"
+NEW_BASE="https://ground-zerro.github.io/release/keenetic/"
 
 if [ ! -d "/opt/etc/opkg" ]; then
   mkdir -p /opt/etc/opkg
