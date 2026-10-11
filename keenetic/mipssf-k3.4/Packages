@@ -1,0 +1,87 @@
+Package: 3x-ui
+Version: 2.8.10-2
+Depends: xray-core
+Section: net
+Architecture: mips-3.4
+Installed-Size: 0
+Filename: 3x-ui_2.8.10-2_mips-3.4.ipk
+Size: 19019346
+Maintainer: MHSanaei
+Description: Xray panel supporting multi-protocol multi-user expire day & traffic & IP limit (Vmess, Vless, Trojan, ShadowSocks, Wireguard, Tunnel, Mixed, HTTP)
+
+Package: adguardhome-go-ipset
+Version: 0.107.70
+Depends: libc, libssp, librt, libpthread, ca-bundle
+Section: net
+Architecture: mips-3.4
+Installed-Size: 0
+Filename: adguardhome-go-ipset_0.107.70_mips-3.4.ipk
+Size: 10941439
+Maintainer: Ground_Zerro, AdguardTeam
+Description: AdGuard Home fork with ipset settings in frontend.
+
+Package: hrdns
+Version: 1.2.3-1
+Depends: gzip
+Section: net
+Architecture: mips-3.4
+Installed-Size: 13132852
+Filename: hrdns_1.2.3-1_mips-3.4.ipk
+Size: 5971152
+Maintainer: Ground_Zerro
+Description: DNS resolver of the HydraRoute DNS service with built-in query statistics
+
+Package: hrneo
+Version: 3.24.0-1
+Depends: libc, ipset, iptables, ip-full
+Section: net
+Architecture: mips-3.4
+Installed-Size: 272390
+Filename: hrneo_3.24.0-1_mips-3.4.ipk
+Size: 125844
+Maintainer: Ground_Zerro
+Description: DNS-based policy routing daemon for Keenetic
+
+Package: hrweb
+Version: 1.65.12-1
+Depends: libc
+Section: net
+Architecture: mips-3.4
+Installed-Size: 12276338
+Filename: hrweb_1.65.12-1_mips-3.4.ipk
+Size: 4292549
+Maintainer: Ground_Zerro
+Description: WebUI for HydraRoute Neo
+
+Package: hydraroute
+Version: 1.1.0-final
+Depends: ipset, iptables, adguardhome-go
+Section: net
+Architecture: mips-3.4
+Installed-Size: 0
+Filename: hydraroute_1.1.0-final_mips-3.4.ipk
+Size: 2987370
+Maintainer: Ground_Zerro
+Description: HydraRoute Classic - domain routing for Keenetic based on ipset and AGH integration + WebUI control panel
+
+Package: xray-core
+Version: 26.7.28-1
+Depends: ca-bundle
+Section: net
+Architecture: mips-3.4
+Installed-Size: 35594240
+Filename: xray-core_26.7.28-1_mips-3.4.ipk
+Size: 11093927
+Maintainer: Entware team, https://entware.net
+Description: Project X originates from XTLS protocol, providing a set of network tools.
+
+Package: xray
+Version: 26.7.28-1
+Depends: ca-bundle, xray-core
+Section: net
+Architecture: mips-3.4
+Installed-Size: 20480
+Filename: xray_26.7.28-1_mips-3.4.ipk
+Size: 2836
+Maintainer: Entware team, https://entware.net
+Description: Project X originates from XTLS protocol, providing a set of network tools.

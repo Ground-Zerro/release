@@ -1,0 +1,87 @@
+Package: 3x-ui
+Version: 2.8.10-2
+Depends: xray-core
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 0
+Filename: 3x-ui_2.8.10-2_aarch64-3.10.ipk
+Size: 19099902
+Maintainer: MHSanaei
+Description: Xray panel supporting multi-protocol multi-user expire day & traffic & IP limit (Vmess, Vless, Trojan, ShadowSocks, Wireguard, Tunnel, Mixed, HTTP)
+
+Package: adguardhome-go-ipset
+Version: 0.107.70
+Depends: libc, libssp, librt, libpthread, ca-bundle
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 0
+Filename: adguardhome-go-ipset_0.107.70_aarch64-3.10.ipk
+Size: 10634533
+Maintainer: Ground_Zerro, AdguardTeam
+Description: AdGuard Home fork with ipset settings in frontend.
+
+Package: hrdns
+Version: 1.2.3-1
+Depends: gzip
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 11867000
+Filename: hrdns_1.2.3-1_aarch64-3.10.ipk
+Size: 5916867
+Maintainer: Ground_Zerro
+Description: DNS resolver of the HydraRoute DNS service with built-in query statistics
+
+Package: hrneo
+Version: 3.24.0-1
+Depends: libc, ipset, iptables, ip-full
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 207978
+Filename: hrneo_3.24.0-1_aarch64-3.10.ipk
+Size: 100642
+Maintainer: Ground_Zerro
+Description: DNS-based policy routing daemon for Keenetic
+
+Package: hrweb
+Version: 1.65.12-1
+Depends: libc
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 4163623
+Filename: hrweb_1.65.12-1_aarch64-3.10.ipk
+Size: 4028469
+Maintainer: Ground_Zerro
+Description: WebUI for HydraRoute Neo
+
+Package: hydraroute
+Version: 1.1.0-final
+Depends: ipset, iptables, adguardhome-go
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 0
+Filename: hydraroute_1.1.0-final_aarch64-3.10.ipk
+Size: 2894847
+Maintainer: Ground_Zerro
+Description: HydraRoute Classic - domain routing for Keenetic based on ipset and AGH integration + WebUI control panel
+
+Package: xray-core
+Version: 26.7.28-1
+Depends: ca-bundle
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 35399680
+Filename: xray-core_26.7.28-1_aarch64-3.10.ipk
+Size: 12601630
+Maintainer: Entware team, https://entware.net
+Description: Project X originates from XTLS protocol, providing a set of network tools.
+
+Package: xray
+Version: 26.7.28-1
+Depends: ca-bundle, xray-core
+Section: net
+Architecture: aarch64-3.10
+Installed-Size: 20480
+Filename: xray_26.7.28-1_aarch64-3.10.ipk
+Size: 2838
+Maintainer: Entware team, https://entware.net
+Description: Project X originates from XTLS protocol, providing a set of network tools.
