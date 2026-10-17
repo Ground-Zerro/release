@@ -79,7 +79,7 @@ echo "Updating package list with custom feed..."
 opkg update
 
 echo "Installing HydraRoute package..."
-opkg install hrneo hrweb
+opkg install hrneo hrweb hrdns
 
 # Optional cleanup
 SCRIPT="$0"
